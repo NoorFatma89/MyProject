@@ -1,0 +1,10 @@
+MED-110;PT-100;DOC-10;Common cold;Rest, plenty of fluids, over-the-counter cold medicine;Acetaminophen, Cough syrup;N/A
+MED-111;PT-100;DOC-10;Sinusitis;Antibiotics, nasal decongestants, saline nasal irrigation;Amoxicillin, Oxymetazoline, Saline solution;N/A
+MED-112;PT-105;DOC-12;Bronchitis;Rest, hydration, cough suppressants;Dextromethorphan;Chest X-ray showing inflammation
+MED-113;PT-105;DOC-12;Pneumonia;Antibiotics, antipyretics, oxygen therapy;Azithromycin, Paracetamol, Oxygen;Chest X-ray showing infiltrates
+MED-114;PT-110;DOC-14;Acute gastritis;Dietary modifications, antacids, proton pump inhibitors;Omeprazole, Sucralfate;N/A
+MED-115;PT-110;DOC-14;Gastroesophageal reflux disease (GERD);Lifestyle changes, proton pump inhibitors, antacids;Esomeprazole, Aluminum hydroxide;N/A
+MED-116;PT-110;DOC-14;Peptic ulcer disease;Antibiotics, proton pump inhibitors, antacids;Amoxicillin, Lansoprazole, Calcium carbonate;N/A
+MED-117;PT-111;DOC-17;Hypertension;Lifestyle changes, antihypertensive medication;Exercise, Amlodipine;Blood pressure readings within normal range
+MED-118;PT-111;DOC-17;Type 2 diabetes mellitus;Blood sugar monitoring, dietary changes, oral antidiabetic drugs;Metformin, Sitagliptin;Blood glucose levels within target range
+MED-119;PT-111;DOC-17;Hyperlipidemia;Lifestyle modifications, statins;Atorvastatin;Cholesterol levels within normal range
