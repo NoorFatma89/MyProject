@@ -81,6 +81,7 @@ public:
     }
 
     virtual string toString() const = 0;
+    
     virtual ~DataObject() 
     {
         de_alloc("DataObject");
@@ -250,15 +251,15 @@ class MedicalRecord : public DataObject
 {
 private:
     string recordID;
-    Patient *patient;
-    Doctor *doctor;
+    string patientID;
+    string doctorID;
     string diagnosis;
     string treatment;
     string medications;
     string labResults;
 
 public:
-    MedicalRecord() : patient(nullptr), doctor(nullptr) 
+    MedicalRecord()
     {
         new_alloc("MedicalRecord");
     }
@@ -268,8 +269,8 @@ public:
         de_alloc("MedicalRecord");
     }
 
-    MedicalRecord(const string &recordID_, Patient *patient_, Doctor *doctor_, const string &diagnosis_, const string &treatment_, const string &medications_, const string &labResults_)
-        : recordID(recordID_), patient(patient_), doctor(doctor_), diagnosis(diagnosis_), treatment(treatment_), medications(medications_), labResults(labResults_) 
+    MedicalRecord(const string &recordID_, const string &patientID_, const string &doctorID_, const string &diagnosis_, const string &treatment_, const string &medications_, const string &labResults_)
+        : recordID(recordID_), patientID(patientID_), doctorID(doctorID_), diagnosis(diagnosis_), treatment(treatment_), medications(medications_), labResults(labResults_) 
     {
         new_alloc("MedicalRecord");
     }
@@ -278,11 +279,11 @@ public:
     string getRecordID() const { return recordID; }
     void setRecordID(const string &recordID) { this->recordID = recordID; }
 
-    Patient *getPatient() const { return patient; }
-    void setPatient(Patient *patient) { this->patient = patient; }
+    string getPatientID() const { return patientID; }
+    void setPatientID(const string &patientID) { this->patientID = patientID; }
 
-    Doctor *getDoctor() const { return doctor; }
-    void setDoctor(Doctor *doctor) { this->doctor = doctor; }
+    string getDoctorID() const { return doctorID; }
+    void setDoctorID(const string &doctorID) { this->doctorID = doctorID; }
 
     string getDiagnosis() const { return diagnosis; }
     void setDiagnosis(const string &diagnosis) { this->diagnosis = diagnosis; }
@@ -298,7 +299,16 @@ public:
 
     string toString() const
     {
-        return "Medical Record ID: " + recordID + ", Diagnosis: " + diagnosis + ", Treatment: " + treatment;
+        stringstream ss;
+        ss << "Medical Record ID: " << recordID << endl;
+        ss << "Patient ID: " << patientID << endl;
+        ss << "Doctor ID: " << doctorID << endl;
+        ss << "Diagnosis: " << diagnosis << endl;
+        ss << "Treatment: " << treatment << endl;
+        ss << "Medications: " << medications << endl;
+        ss << "Lab Results: " << labResults << endl;
+
+        return ss.str();
     }
 };
 
@@ -638,13 +648,13 @@ class Prescription : public DataObject
 {
 private:
     string prescriptionID;
-    Person *patient;
-    Person *doctor;
+    string patient;
+    string doctor;
     string prescriptionDetails;
     string datePrescribed;
 
 public:
-    Prescription() : patient(nullptr), doctor(nullptr) 
+    Prescription()
     {
         new_alloc("Prescription");
     }
@@ -654,7 +664,7 @@ public:
         de_alloc("Prescription");
     }
 
-    Prescription(const string &prescriptionID_, Person *patient_, Person *doctor_, const string &prescriptionDetails_, const string &datePrescribed_)
+    Prescription(const string &prescriptionID_, const string &patient_, const string &doctor_, const string &prescriptionDetails_, const string &datePrescribed_)
         : prescriptionID(prescriptionID_), patient(patient_), doctor(doctor_), prescriptionDetails(prescriptionDetails_), datePrescribed(datePrescribed_) 
     {
         new_alloc("Prescription");
@@ -664,11 +674,11 @@ public:
     void setPrescriptionID(const string &prescriptionID) { this->prescriptionID = prescriptionID; }
     string getPrescriptionID() const { return prescriptionID; }
 
-    void setPatient(Person *patient) { this->patient = patient; }
-    Person *getPatient() const { return patient; }
+    void setPatient(const string &patient) { this->patient = patient; }
+    string getPatient() const { return patient; }
 
-    void setDoctor(Person *doctor) { this->doctor = doctor; }
-    Person *getDoctor() const { return doctor; }
+    void setDoctor(const string &doctor) { this->doctor = doctor; }
+    string getDoctor() const { return doctor; }
 
     void setPrescriptionDetails(const string &prescriptionDetails) { this->prescriptionDetails = prescriptionDetails; }
     string getPrescriptionDetails() const { return prescriptionDetails; }
@@ -680,8 +690,8 @@ public:
     {
         stringstream ss;
         ss << "Prescription ID: " << prescriptionID << "\n";
-        ss << "Patient: " << patient->getName() << "\n";
-        ss << "Doctor: " << doctor->getName() << "\n";
+        ss << "Patient: " << patient<< "\n";
+        ss << "Doctor: " << doctor<< "\n";
         ss << "Prescription Details: " << prescriptionDetails << "\n";
         ss << "Date Prescribed: " << datePrescribed << "\n";
         return ss.str();
@@ -1012,6 +1022,7 @@ public:
         {
             if(line == "")
                 continue;
+            
             vector<string> row;
             stringstream ss(line);
             string item;
@@ -1047,9 +1058,12 @@ class ObjectCache
     ObjectCache() 
     {
         new_alloc("ObjectCache");
+
         objectsMap["Patient"] = new map<string, DataObject *>;
         objectsMap["Doctor"] = new map<string, DataObject *>;
         objectsMap["Department"] = new map<string, DataObject *>;
+        objectsMap["MedicalRecord"] = new map<string, DataObject *>;
+        objectsMap["Prescription"] = new map<string, DataObject *>;
     }
 
 public:
@@ -1074,25 +1088,47 @@ public:
     { 
         (*(objectsMap)["Department"])[department->getDepartmentID()] = department;
     }
+    
+    void addMedicalRecords(MedicalRecord *medicalRecord)
+    {
+        (*(objectsMap)["MedicalRecord"])[medicalRecord->getRecordID()] = medicalRecord;
+    }
+
+    void addPrescriptions(Prescription *prescription)
+    {
+        (*(objectsMap)["Prescription"])[prescription->getPrescriptionID()] = prescription;
+    }
 
     map<string, DataObject *> *getPatients() { return objectsMap["Patient"]; }
     map<string, DataObject *> *getDoctors() { return objectsMap["Doctor"]; }
     map<string, DataObject *> *getDepartments() { return objectsMap["Department"]; }
+    map<string, DataObject *> *getMedicalRecords() { return objectsMap["MedicalRecord"]; }
+    map<string, DataObject *> *getPrescriptions() { return objectsMap["Prescription"]; }
 
 
     Patient *getPatient(const string &id) 
     {
-        return dynamic_cast<Patient*>((*(objectsMap)["Patient"])[id]);
+        return dynamic_cast<Patient*>((*objectsMap["Patient"])[id]);
     }
 
     Doctor *getDoctor(const string &id) 
     {
-        return dynamic_cast<Doctor *>((*(objectsMap)["Doctor"])[id]);
+        return dynamic_cast<Doctor *>((*objectsMap["Doctor"])[id]);
     }
 
     Department *getDepartment(const string &id) 
     {
-        return dynamic_cast<Department *>((*(objectsMap)["Department"])[id]);
+        return dynamic_cast<Department *>((*objectsMap["Department"])[id]);
+    }
+
+    MedicalRecord *getMedicalRecord(const string&id)
+    {
+        return dynamic_cast<MedicalRecord*>((*objectsMap["MedicalRecord"])[id]);
+    }
+
+    Prescription *getPrescription(const string&id)
+    {
+        return dynamic_cast<Prescription*>((*objectsMap["Prescription"])[id]);
     }
    
     vector<Patient *> *getPatientList()
@@ -1128,18 +1164,50 @@ public:
         return departmentList;
     }
 
+    vector<MedicalRecord*> *getMedicalRecordList()
+    {
+        map<string, DataObject *> &medicalRecords = *(objectsMap["MedicalRecord"]);
+        vector<MedicalRecord *> *medicalRecordList = new vector<MedicalRecord *>;
+        for (auto it = medicalRecords.begin(); it != medicalRecords.end(); ++it)
+        {
+            medicalRecordList->push_back(dynamic_cast<MedicalRecord *>(it->second));
+        }
+        return medicalRecordList;
+    }
+
+    vector<Prescription*> *getPrescriptionList()
+    {
+        map<string, DataObject *> &prescriptions = *(objectsMap["Prescription"]);
+        vector<Prescription *> *prescriptionList = new vector<Prescription *>;
+        for (auto it = prescriptions.begin(); it != prescriptions.end(); ++it)
+        {
+            prescriptionList->push_back(dynamic_cast<Prescription *>(it->second));
+        }
+        return prescriptionList;
+    }
+
     ~ObjectCache()
     {  
         map<string, DataObject *> &patients = *(objectsMap["Patient"]);
-        map<string, DataObject *> &doctors = *(objectsMap["Doctor"]);      
-        map<string, DataObject *> &departments = *(objectsMap["Department"]);
         if(patients.size() > 0) releasePatients();
+
+        map<string, DataObject *> &doctors = *(objectsMap["Doctor"]);      
         if(doctors.size() > 0) releaseDoctors();
+        
+        map<string, DataObject *> &departments = *(objectsMap["Department"]);
         if(departments.size() > 0) releaseDepartments();
+
+        map<string, DataObject *> &medicalRecords = *(objectsMap["MedicalRecord"]);
+        if(medicalRecords.size() > 0) releaseMedicalRecords();
+
+        map<string, DataObject *> &prescriptions = *(objectsMap["Prescription"]);
+        if(prescriptions.size() > 0) releasePrescriptions();
 
         delete objectsMap["Patient"];
         delete objectsMap["Doctor"];
         delete objectsMap["Department"];
+        delete objectsMap["MedicalRecord"];
+        delete objectsMap["Prescription"];
 
         de_alloc("ObjectCache");
     }
@@ -1177,6 +1245,28 @@ private:
         delete dataObjects;
         dataObjects = NULL;
     }
+
+    void releaseMedicalRecords()
+    {
+        vector<MedicalRecord *> *dataObjects = this->getMedicalRecordList();
+        for (int i = 0; i < dataObjects->size(); ++i)
+        {
+            delete (*dataObjects)[i];
+        }
+        delete dataObjects;
+        dataObjects = NULL;
+    }
+
+    void releasePrescriptions()
+    {
+        vector<Prescription *> *dataObjects = this->getPrescriptionList();
+        for (int i = 0; i < dataObjects->size(); ++i)
+        {
+            delete (*dataObjects)[i];
+        }
+        delete dataObjects;
+        dataObjects = NULL;
+    }
 };
 
 ObjectCache *ObjectCache::instance;
@@ -1191,7 +1281,7 @@ public:
     Builder()
     {
         new_alloc("Builder");
-        filepath = "C:/Users/care point/Desktop/HMS/Database/";
+        filepath = "C:/Users/care point/Desktop/TalenciaGlobal-Trainning/Training/Data/";
     }
 
     vector<DataObject *> *makeDataObjectList(char delimiter = ';')
@@ -1202,8 +1292,7 @@ public:
         
         try{
             data = textFileReader->readData(filepath, delimiter);
-            dataObjects = constructDataObject(data);
-    
+            dataObjects = constructDataObject(data); 
         }
         catch(const runtime_error& e)
         {
@@ -1307,12 +1396,13 @@ public:
     vector<DataObject *> *constructDataObject(vector<vector<string> > *data)
     {
         vector<DataObject *> *dataObjects = new vector<DataObject *>(data->size());
-        for (int i = 0; i < data->size(); ++i)
+
+        for (int i = 0; i < data->size() && (*data)[i].size(); ++i)
         {
-            string& departmentID =  (*data)[i][0];
-            string& name =  (*data)[i][1];
-            string& description =  (*data)[i][2];
-            string& doctorId =  (*data)[i][3];
+            string &departmentID = (*data)[i][0];
+            string &name = (*data)[i][1];
+            string &description = (*data)[i][2];
+            string &doctorId = (*data)[i][3];
 
             Department *department = new Department(departmentID, name, description, doctorId);
             (*dataObjects)[i] = department;
@@ -1328,10 +1418,80 @@ public:
     }
 };
 
+class MedicalRecordBuilder : public Builder
+{
+public:
+    MedicalRecordBuilder()
+    {
+        new_alloc("MedicalRecordBuilder");
+        filepath += "MedicalRecords.Data";
+    }
+
+    vector<DataObject *> *constructDataObject(vector<vector<string> >* data)
+    {
+        vector<DataObject *> *dataObjects = new vector<DataObject *>(data->size());
+        for (int i = 0; i < data->size(); ++i)
+        {
+            string &recordId = (*data)[i][0];
+            string &patientId = (*data)[i][1];
+            string &doctorId = (*data)[i][2];
+            string &diagnosis = (*data)[i][3];
+            string &treatment = (*data)[i][4];
+            string &medications = (*data)[i][5];
+            string &labResults = (*data)[i][6];
+
+            MedicalRecord *medicalRecord = new MedicalRecord(recordId, patientId, doctorId, diagnosis, treatment, medications, labResults);
+            (*dataObjects)[i] = medicalRecord;
+
+            ObjectCache::getInstance()->addMedicalRecords(medicalRecord);
+        }
+
+        return dataObjects;
+    }
+
+    ~MedicalRecordBuilder()
+    {
+        de_alloc("MedicalRecordBuilder");
+    }
+};
+
+class PrescriptionBuilder : public Builder {
+public:
+    PrescriptionBuilder() {
+        new_alloc("PrescriptionBuilder");
+        filepath += "Prescriptions.Data";
+    }
+
+    vector<DataObject *> *constructDataObject(vector<vector<string> > *data) 
+    {
+        vector<DataObject *> *dataObjects = new vector<DataObject *>(data->size());
+        for (int i = 0; i < data->size(); ++i) 
+        {
+            string& prescriptionID = (*data)[i][0];  
+            string& patient = (*data)[i][1];        
+            string& doctor = (*data)[i][2];            
+            string& prescriptionDetails = (*data)[i][3];
+            string& datePrescribed = (*data)[i][4];
+
+            Prescription *prescription = new Prescription(prescriptionID, patient, doctor, prescriptionDetails, datePrescribed);
+            (*dataObjects)[i] = prescription;
+
+            ObjectCache::getInstance()->addPrescriptions(prescription); 
+        }
+        
+        return dataObjects;
+    }
+
+    ~PrescriptionBuilder() {
+        de_alloc("PrescriptionBuilder");
+    }
+};
+
 class BuilderFactory
 {
     map<string, Builder *> builders;
     static BuilderFactory *instance;
+
     BuilderFactory()
     {
         new_alloc("BuilderFactory");
@@ -1339,6 +1499,8 @@ class BuilderFactory
         builders["Patient"] = new PatientBuilder;
         builders["Doctor"] = new DoctorBuilder;
         builders["Department"] = new DepartmentBuilder;
+        builders["MedicalRecord"] = new MedicalRecordBuilder;
+        builders["Prescription"] = new PrescriptionBuilder;
     }
 
 public:
@@ -1408,9 +1570,9 @@ public:
         cout << "-----------------------------------------------" << endl;
         for (int i = 0; i < dataObjects->size(); ++i)
         {
-            DataObject *dobj = (*dataObjects)[i];
-            Patient *pt = dynamic_cast<Patient *>(dobj);
-            displayPatient(pt);
+            DataObject *dataObject = (*dataObjects)[i];
+            Patient *patient = dynamic_cast<Patient *>(dataObject);
+            displayPatient(patient);
         }
     }
 
@@ -1459,9 +1621,9 @@ public:
         cout << "-----------------------------------------------" << endl;
         for (int i = 0; i < dataObjects->size(); ++i)
         {
-            DataObject *dobj = (*dataObjects)[i];
-            Doctor *dt = dynamic_cast<Doctor *>(dobj);
-            displayDoctor(dt);
+            DataObject *dataObject = (*dataObjects)[i];
+            Doctor *doctor = dynamic_cast<Doctor *>(dataObject);
+            displayDoctor(doctor);
         }
     }
 
@@ -1507,9 +1669,9 @@ public:
         cout << "-----------------------------------------------" << endl;
         for (int i = 0; i < dataObjects->size(); ++i)
         {
-            DataObject *dobj = (*dataObjects)[i];
-            Department *dt = dynamic_cast<Department *>(dobj);
-            displayDepartment(dt);
+            DataObject *dataObject = (*dataObjects)[i];
+            Department *department = dynamic_cast<Department *>(dataObject);
+            displayDepartment(department);
         }
     }
 
@@ -1531,16 +1693,119 @@ public:
     }
 };
 
+class MedicalRecordForm : public Form
+{
+private:
+    void displayMedicalRecords(MedicalRecord *medicalRecord)
+    {
+        cout << "Record Id: " << medicalRecord->getRecordID() << endl;
+        cout << "Patient Id: " << medicalRecord->getPatientID() << endl;
+        cout << "Doctor Id: " << medicalRecord->getDoctorID() << endl;
+        cout << "Diagnosis: " << medicalRecord->getDiagnosis() << endl;
+        cout << "Treatment: " << medicalRecord->getTreatment() << endl;
+        cout << "Medications: " << medicalRecord->getMedications() << endl;
+        cout << "Lab Results: " << medicalRecord->getLabResults() << endl
+             << endl;
+    }
+
+public:
+    MedicalRecordForm()
+    {
+        new_alloc("MedicalRecordForm");
+    }
+
+    void displayData(vector<DataObject *>* dataObjects)
+    {
+        cout << "Medical Record's Data: " << endl;
+        cout << "-----------------------------------------------" << endl;
+        for (int i = 0; i < dataObjects->size(); ++i)
+        {
+            DataObject *dataObject = (*dataObjects)[i];
+            MedicalRecord *medicalRecord = dynamic_cast<MedicalRecord *>(dataObject);
+            displayMedicalRecords(medicalRecord);
+        }
+    }
+
+    void displayCacheData()
+    {
+        map<string, DataObject *> *dataObjects = ObjectCache::getInstance()->getMedicalRecords();
+        cout << "Medical Record's Cache Data: " << endl;
+        cout << "-----------------------------------------------" << endl;
+        for(auto medicalRecord: (*dataObjects))
+        {
+            cout << dynamic_cast<MedicalRecord *>(medicalRecord.second)->toString() << endl;
+        }
+        cout << "-----------------------------------------------" << endl;
+    }
+
+    ~MedicalRecordForm()
+    {
+        de_alloc("MedicalRecordForm");
+    }
+};
+
+class PrescriptionForm : public Form
+{
+private:
+    void displayPrescription(Prescription *prescription)
+    {
+        cout << "Prescription ID: " << prescription->getPrescriptionID() << endl;
+        cout << "Patient: " << prescription->getPatient() << endl;
+        cout << "Doctor: " << prescription->getDoctor() << endl;
+        cout << "Prescription Details: " << prescription->getPrescriptionDetails() << endl;
+        cout << "Date Prescribed: " << prescription->getDatePrescribed() << endl << endl;
+    }
+
+public:
+    PrescriptionForm()
+    {
+        new_alloc("PrescriptionForm");
+    }
+
+    void displayData(vector<DataObject*>* dataObjects)
+    {
+        cout << "Prescription's Data: " << endl;
+        cout << "-----------------------------------------------" << endl;
+        for (int i = 0; i < dataObjects->size(); ++i)
+        {
+            DataObject *dataObject = (*dataObjects)[i];
+            Prescription *prescription = dynamic_cast<Prescription *>(dataObject);
+            displayPrescription(prescription);
+        }
+    }
+
+    void displayCacheData()
+    {
+        map<string, DataObject *> *dataObjects = ObjectCache::getInstance()->getPrescriptions();
+        cout << "Prescription's Cache Data: " << endl;
+        cout << "-----------------------------------------------" << endl;
+        for(auto prescription: (*dataObjects))
+        {
+            cout << dynamic_cast<Prescription *>(prescription.second)->toString() << endl;
+        }
+        cout << "-----------------------------------------------" << endl;
+    }
+
+    ~PrescriptionForm()
+    {
+        de_alloc("PrescriptionForm");
+    }
+};
+
 class FormFactory
 {
     map<string, Form*> forms;
     static FormFactory *instance;
+
     FormFactory()
     {
         new_alloc("FormFactory");
+
         forms["Patient"] = new PatientForm;
         forms["Doctor"] = new DoctorForm;
         forms["Department"] = new DepartmentForm;
+        forms["MedicalRecord"] = new MedicalRecordForm;
+        forms["Prescription"] = new PrescriptionForm;
     }
 
 public:
@@ -1571,17 +1836,8 @@ FormFactory *FormFactory::instance;
 class Controller
 {
 public:
-    Controller()
-    {
-        new_alloc("Controller");
-    }
-
-    virtual ~Controller()
-    {
-        de_alloc("Controller");
-    }
-
     virtual void execute() = 0;
+    virtual ~Controller() {}
 };
 
 class PatientController : public Controller
@@ -1591,6 +1847,7 @@ class PatientController : public Controller
     {
         new_alloc("PatientController");
     }
+
 public:
     static PatientController* getInstance()
     {
@@ -1601,14 +1858,14 @@ public:
 
     void execute()
     {
-        Builder *builder1 = BuilderFactory::getInstance()->createBuilder("Patient");
-        vector<DataObject *> *dataObjects1 = builder1->makeDataObjectList();
+        Builder *builder = BuilderFactory::getInstance()->createBuilder("Patient");
+        vector<DataObject *> *dataObjects = builder->makeDataObjectList();
 
-        Form *form1 = FormFactory::getInstance()->createForm("Patient");
-        form1->displayData(dataObjects1);
+        Form *form = FormFactory::getInstance()->createForm("Patient");
+        form->displayData(dataObjects);
 
         cout << "-------------------------------------" << endl;
-        form1->displayCacheData();
+        form->displayCacheData();
     }    
 
     ~PatientController()
@@ -1622,10 +1879,12 @@ PatientController *PatientController::instance;
 class DoctorController : public Controller
 {
     static DoctorController *instance;
+
     DoctorController()
     {
         new_alloc("DoctorController");
     }
+
 public:
     static DoctorController* getInstance()
     {
@@ -1636,14 +1895,14 @@ public:
 
     void execute()
     {
-        Builder *builder2 = BuilderFactory::getInstance()->createBuilder("Doctor");
-        vector<DataObject *> *dataObjects2 = builder2->makeDataObjectList();
+        Builder *builder = BuilderFactory::getInstance()->createBuilder("Doctor");
+        vector<DataObject *> *dataObjects = builder->makeDataObjectList();
 
-        Form *form2 = FormFactory::getInstance()->createForm("Doctor");
-        form2->displayData(dataObjects2);
+        Form *form = FormFactory::getInstance()->createForm("Doctor");
+        form->displayData(dataObjects);
 
         cout << "-------------------------------------" << endl;
-        form2->displayCacheData();
+        form->displayCacheData();
     }
 
     ~DoctorController()
@@ -1657,10 +1916,12 @@ DoctorController *DoctorController::instance;
 class DepartmentController : public Controller
 {
     static DepartmentController *instance;
+
     DepartmentController()
     {
         new_alloc("DepartmentController");
     }
+
 public:
     static DepartmentController* getInstance()
     {
@@ -1671,14 +1932,14 @@ public:
 
     void execute()
     {
-        Builder *builder3 = BuilderFactory::getInstance()->createBuilder("Department");
-        vector<DataObject *> *dataObjects3 = builder3->makeDataObjectList(',');
-        if(dataObjects3->size()>1){
-        Form *form3 = FormFactory::getInstance()->createForm("Department");
-        form3->displayData(dataObjects3);
+        Builder *builder = BuilderFactory::getInstance()->createBuilder("Department");
+        vector<DataObject *> *dataObjects = builder->makeDataObjectList(',');
+
+        Form *form = FormFactory::getInstance()->createForm("Department");
+        form->displayData(dataObjects);
 
         cout << "-------------------------------------" << endl;
-        form3->displayCacheData();}
+        form->displayCacheData();
     }
 
     ~DepartmentController()
@@ -1688,6 +1949,80 @@ public:
 };
 
 DepartmentController *DepartmentController::instance;
+
+class MedicalRecordController : public Controller
+{
+    static MedicalRecordController *instance;
+
+    MedicalRecordController()
+    {
+        new_alloc("MedicalRecordController");
+    }
+
+public:
+    static MedicalRecordController* getInstance()
+    {
+        if(instance == NULL)
+            instance = new MedicalRecordController;
+        return instance;
+    }
+
+    void execute()
+    {
+        Builder *builder = BuilderFactory::getInstance()->createBuilder("MedicalRecord");
+        vector<DataObject *> *dataObjects = builder->makeDataObjectList();
+
+        Form *form = FormFactory::getInstance()->createForm("MedicalRecord");
+        form->displayData(dataObjects);
+
+        cout << "-------------------------------------" << endl;
+        form->displayCacheData();       
+    }
+
+    ~MedicalRecordController()
+    {
+        de_alloc("MedicalRecordController");
+    }
+};
+
+MedicalRecordController * MedicalRecordController::instance;
+
+class PrescriptionController : public Controller
+{
+    static PrescriptionController *instance;
+
+    PrescriptionController()
+    {
+        new_alloc("PrescriptionController");
+    }
+
+public:
+    static PrescriptionController* getInstance()
+    {
+        if(instance == NULL)
+            instance = new PrescriptionController;
+        return instance;
+    }
+
+    void execute()
+    {
+        Builder *builder = BuilderFactory::getInstance()->createBuilder("Prescription");
+        vector<DataObject *> *dataObjects = builder->makeDataObjectList(';');
+
+        Form *form = FormFactory::getInstance()->createForm("Prescription");
+        form->displayData(dataObjects);
+
+        cout << "-------------------------------------" << endl;
+        form->displayCacheData();
+    }
+
+    ~PrescriptionController()
+    {
+        de_alloc("PrescriptionController");
+    }
+};
+
+PrescriptionController *PrescriptionController::instance;
 
 void displayObjectCounter()
 {
@@ -1703,7 +2038,7 @@ void displayObjectCounter()
     }
 }
 
-class HMSAppController
+class HMSAppController : public Controller
 {
     static HMSAppController *instance;
     HMSAppController()
@@ -1727,16 +2062,22 @@ public:
         PatientController::getInstance()->execute();
         DoctorController::getInstance()->execute();
         DepartmentController::getInstance()->execute();
+        MedicalRecordController::getInstance()->execute();
+        PrescriptionController::getInstance()->execute();
     }
 
     ~HMSAppController()
     {
         #ifdef ENABLE_NEW_ALLOC
             displayObjectCounter();
-        #endif            
+        #endif    
+
             delete PatientController::getInstance();
             delete DoctorController::getInstance();
             delete DepartmentController::getInstance();
+            delete MedicalRecordController::getInstance();
+            delete PrescriptionController::getInstance();
+
             delete ObjectCache::getInstance();
             delete FormFactory::getInstance();            
             delete BuilderFactory::getInstance();
@@ -1753,9 +2094,12 @@ HMSAppController *HMSAppController::instance;
 
 int main()
 {
-    HMSAppController::getInstance()->execute();
+    Controller *controller = HMSAppController::getInstance();
+    controller->execute();
 
-    delete HMSAppController::getInstance();
+    delete controller;
+    controller = NULL;
+
     delete ObjectCounter::getInstance();
 
     return 0;
